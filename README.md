@@ -1,2 +1,112 @@
-# ThyroMultiBench
-A repository for  the paper ThyroMultiBench: A Comprehensive Text and Multimodal Benchmark for Thyroid Cancer
+# 🌟 ThyroMultiBench Evaluation Toolkit
+
+[English](README.md) | [中文版](README_zh.md)
+
+---
+
+## 📖 English Version: Comprehensive Tutorial
+
+Welcome to the official evaluation toolkit for **"ThyroMultiBench: A Comprehensive Text and Multimodal Benchmark for Thyroid Cancer"**. 
+
+This repository is designed to be highly beginner-friendly. It provides a complete, out-of-the-box solution to evaluate Large Language Models (LLMs) and Multimodal Large Language Models (MLLMs) using the ThyroMultiBench dataset.
+
+### 📑 Table of Contents
+1. [Environment Setup](#1-environment-setup)
+2. [Configuration](#2-configuration)
+3. [Dataset Preparation](#3-dataset-preparation)
+4. [Understanding the Evaluation Pipeline](#4-understanding-the-evaluation-pipeline)
+5. [Running the Evaluation](#5-running-the-evaluation)
+6. [Prompts Explanation](#6-prompts-explanation)
+
+---
+
+### 1. Environment Setup
+
+First, clone this repository to your local machine:
+```bash
+git clone https://github.com/yourusername/ThyroMultiBench-Eval.git
+cd ThyroMultiBench-Eval
+```
+
+Install the required Python packages. We use standard libraries like `openai`, `anthropic` (for Claude), `pandas` and `openpyxl` for reading datasets, and `tqdm` for progress bars.
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Configuration
+
+This toolkit supports **OpenAI (GPT series)**, **Aliyun DashScope (Qwen series)**, **Anthropic (Claude series)**, and any **OpenAI-Compatible** API endpoints out of the box. 
+To configure your API keys, create a `config.json` file in the root directory:
+
+```json
+{
+    "openai_api_key": "sk-your-openai-api-key",
+    "dashscope_api_key": "sk-your-qwen-api-key",
+    "anthropic_api_key": "sk-ant-your-claude-api-key",
+    "general_api_key": "sk-your-general-api-key",
+    "general_api_base": "https://api.your-provider.com/v1"
+}
+```
+*Note: The code will automatically load this configuration file. You do not need to pass API keys via command-line arguments.*
+
+### 3. Dataset Preparation
+
+Before running evaluations, you need to place your raw dataset into the `dataset/` directory. The expected structure is as follows:
+
+```text
+dataset/
+├── text_tasks/
+│   ├── multiple_choice.json      # Pure text multiple choice questions
+│   ├── open_qa.json              # Open-ended QA
+│   └── dialogue.json             # Multi-turn dialogue history
+├── multimodal_tasks/
+│   ├── image_qa.xlsx             # Multimodal tasks containing image URLs and questions
+│   └── images/                   # Local image files (if applicable)
+└── prognosis/
+    └── prognosis_eval.json       # Clinical case reports for prognosis evaluation
+```
+
+#### Why this structure?
+- **JSON for Text**: JSON is lightweight and perfect for structuring text questions, options, and answers.
+- **Excel for Multimodal**: Multimodal data often contains complex metadata, image URLs, and text. `pandas` makes reading `.xlsx` seamless.
+- **Prognosis**: The `prognosis_eval.json` contains raw clinical symptoms split from case reports, serving as a complex reasoning task.
+
+### 4. Understanding the Evaluation Pipeline
+
+This codebase is highly modular. All evaluation logic is located in the `src/evaluators/` directory:
+
+1. **Text Evaluator (`text_evaluator.py`)**: 
+   - *Multiple Choice*: Automatically extracts the predicted option (A, B, C, D) and calculates **Accuracy**.
+   - *Open QA*: Generates detailed answers that will later be scored by a Judge.
+2. **Multimodal Evaluator (`multimodal_evaluator.py`)**: 
+   - Constructs messages combining text and images (via URLs or base64) to query multimodal models.
+3. **Dialogue Evaluator (`dialogue_evaluator.py`)**: 
+   - Passes the entire conversation history to the model to generate the next turn.
+4. **Prognosis Evaluator (`prognosis_evaluator.py`)**: 
+   - *Two-step process*: First, it uses an advanced reasoning model to parse the raw clinical case and generate specific prognosis questions. Second, it answers those questions.
+5. **LLM-as-a-Judge (`judge.py`)**: 
+   - Uses an advanced model (e.g., GPT-4o or Claude-3.5-Sonnet) to compare the AI's generated open-ended answers against the Ground Truth, assigning a score from 0 to 10.
+
+### 5. Running the Evaluation
+
+The main entry point is `evaluate.py`. You do not need to use complex command-line arguments. Simply run:
+
+```bash
+python evaluate.py
+```
+
+**What happens when you run this script?**
+1. It initializes the generator model (e.g., Qwen/Claude/General) and the judge model (e.g., GPT-4o).
+2. It automatically reads files from the `dataset/` directory using our custom `data_loader.py`.
+3. It evaluates Text MCQ and prints the accuracy.
+4. It evaluates Open QA and Dialogue.
+5. It runs the two-step Prognosis evaluation.
+6. Finally, it passes all open-ended outputs to the Judge model for scoring.
+7. All results, including detailed JSON outputs, are saved automatically in the `agent_data/` directory (categorized by task UUID).
+
+### 6. Prompts Explanation
+
+All prompt templates are stored in the `prompt/` directory. They are completely decoupled from the code and provided in both English (`_en.txt`) and Chinese (`_zh.txt`).
+- `multiple_choice_en.txt`: Instructs the model to output the correct option letter.
+- `prognosis_gen_en.txt`: Instructs the model to parse clinical cases and generate questions.
+- `judge_en.txt`: Instructs the judge model to score answers strictly based on medical accuracy.
