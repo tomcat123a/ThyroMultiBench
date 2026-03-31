@@ -4,7 +4,8 @@
 
 ---
 <img width="1408" height="768" alt="下载" src="https://github.com/user-attachments/assets/dfa4c8c4-b100-411d-918c-abbdf2183b51" />
-
+## THIS IS NOT A REPOSITORY TO DEMONSTRATE HOW THE BENCHMARK DATASET WAS BUILT.
+## IT IS NOT FOR BUILDING THE BENCHMARK DATASET ONLY FOR HOW TO USE THE BENCHMARK.
 
 
 ## 📖 English Version: Comprehensive Tutorial
