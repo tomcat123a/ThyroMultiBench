@@ -66,6 +66,11 @@ dataset/
     └── prognosis_eval.json       # Clinical case reports for prognosis evaluation
 ```
 
+#### What is the `dataset/` folder for?
+- It is the default place where [evaluate.py](file:///d:/tencentcloud4G/zeng_thyroid/scientific_data/project_qa_generation/repository/evaluate.py) looks for evaluation files.
+- This repository already ships with a small demo dataset so you can run the pipeline end-to-end. Replace the demo files with your real ThyroMultiBench data (or modify the paths in `evaluate.py`).
+- Do NOT upload sensitive/private clinical data to GitHub. Keep real patient-related data local or in a secure storage.
+
 #### Why this structure?
 - **JSON for Text**: JSON is lightweight and perfect for structuring text questions, options, and answers.
 - **Excel for Multimodal**: Multimodal data often contains complex metadata, image URLs, and text. `pandas` makes reading `.xlsx` seamless.
@@ -76,7 +81,7 @@ dataset/
 This codebase is highly modular. All evaluation logic is located in the `src/evaluators/` directory:
 
 1. **Text Evaluator (`text_evaluator.py`)**: 
-   - *Multiple Choice*: Automatically extracts the predicted option (A, B, C, D) and calculates **Accuracy**.
+   - *Multiple Choice*: Parses the model output into an option letter and calculates **Accuracy**. The parsing logic is implemented in [mcq_utils.py](file:///d:/tencentcloud4G/zeng_thyroid/scientific_data/project_qa_generation/repository/src/utils/mcq_utils.py) and supports formats like `Answer: A`, `答案：A`, `(A)`, `A.`.
    - *Open QA*: Generates detailed answers that will later be scored by a Judge.
 2. **Multimodal Evaluator (`multimodal_evaluator.py`)**: 
    - Constructs messages combining text and images (via URLs or base64) to query multimodal models.

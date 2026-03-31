@@ -67,6 +67,11 @@ dataset/
     └── prognosis_eval.json       # 基于病例报告拆分的临床症状预后评估
 ```
 
+#### `dataset/` 文件夹的目的是什么？需要放案例文件吗？
+- `dataset/` 是默认的数据入口目录：[evaluate.py](file:///d:/tencentcloud4G/zeng_thyroid/scientific_data/project_qa_generation/repository/evaluate.py) 会从这里读取不同任务的评测文件。
+- 本仓库已经自带了一套“演示用小样本数据”，用于让您快速跑通整个评测流程；实际使用时，请将演示文件替换为您下载的 ThyroMultiBench 数据（或在 `evaluate.py` 中修改数据路径）。
+- 强烈建议不要把含敏感信息/真实患者信息的数据上传到 GitHub；请仅在本地或安全存储中使用。
+
 #### 为什么这样设计？
 - 选择题通常包含明确的选项和标准答案，使用 `.json` 格式读取最快。
 - 多模态题目（如超声图片问答）通常需要对齐图片路径和题目文本，使用 `.xlsx`（Excel）格式更加直观，代码中通过 `pandas` 进行了完美兼容。
@@ -76,7 +81,7 @@ dataset/
 为了保证代码的可读性和模块化，所有的评测逻辑都存放在 `src/evaluators/` 目录下：
 
 1. **文本评测器 (`text_evaluator.py`)**：
-   - *选择题*：模型输出后，代码会自动使用正则表达式提取开头的选项字母（A/B/C/D），并自动计算最终的**正确率 (Accuracy)**。
+   - *选择题*：模型输出后，代码会将“自由文本输出”解析为单个选项字母，再计算最终的**正确率 (Accuracy)**。解析逻辑在 [mcq_utils.py](file:///d:/tencentcloud4G/zeng_thyroid/scientific_data/project_qa_generation/repository/src/utils/mcq_utils.py) 中，支持 `Answer: A`、`答案：A`、`(A)`、`A.` 等常见格式。
    - *开放问答*：仅负责生成答案，后续交由“裁判模型”打分。
 2. **多模态评测器 (`multimodal_evaluator.py`)**：
    - 负责将文本提示词与图片 URL 拼接成标准的 Multimodal Message 格式，调用多模态模型进行视觉问答。
