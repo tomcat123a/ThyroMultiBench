@@ -94,10 +94,17 @@ dataset/
 
 ### 5. 如何运行评测
 
+本仓库提供两种运行方式：
+1) 一键全流程：`evaluate.py`
+2) 按任务运行：`scripts/*.py`（更推荐，便于严格控制实验设置）
+
+下面所有命令默认在仓库根目录执行。
+
+#### 5.1 一键全流程（覆盖全部任务）
 本项目的评测主入口是 `evaluate.py` 脚本。您无需输入复杂的参数，直接运行：
 
 ```bash
-python evaluate.py
+python3 evaluate.py
 ```
 
 **运行后会发生什么？**
@@ -106,6 +113,69 @@ python evaluate.py
 3. 依次执行：纯文本选择题（实时打印准确率） -> 开放问答 -> 多模态评估 -> 临床预后两步法评估。
 4. 针对所有生成的开放式回答，调用裁判模型进行自动打分。
 5. **结果保存**：运行过程中所有的详细生成结果、模型输出、裁判打分理由，都会以 `.txt` 或 `.json` 的形式，保存在 `agent_data/` 目录下（按任务自动生成 UUID 文件夹），方便您后续分析。
+
+#### 5.2 按任务运行（推荐）
+每个任务脚本都是“可独立运行”的，并且在脚本顶部提供一组可编辑参数，方便您对模型、语言、数据路径、是否启用裁判打分进行精确控制。
+
+**通用参数（在脚本文件内修改）**
+- `GEN_PROVIDER`：生成模型的提供方。取值：`qwen`、`openai`、`claude`、`general`。
+- `GEN_MODEL_NAME`：生成模型名称，例如 `qwen-plus`、`qwen-vl-plus`、`gpt-4o`、`claude-3-5-sonnet-20240620`。
+- `LANG`：提示词语言。取值：`en` 或 `zh`（决定加载 `prompt/` 中的哪个版本提示词）。
+- `DATASET_REL_PATH`：相对仓库根目录的数据路径。
+- `RUN_JUDGE`：是否启用“裁判模型”自动打分（主观题建议开启）。
+- `JUDGE_PROVIDER` / `JUDGE_MODEL_NAME`：裁判模型设置（provider 取值与 `GEN_PROVIDER` 相同）。
+
+**纯文本选择题（Accuracy）**
+```bash
+python3 scripts/run_text_mcq.py
+```
+- 输入：`dataset/text_tasks/multiple_choice.json`
+- 输出解析：使用 [mcq_utils.py](file:///d:/tencentcloud4G/zeng_thyroid/scientific_data/project_qa_generation/repository/src/utils/mcq_utils.py) 将模型自由文本输出解析为最终选项字母
+- 指标：`accuracy`、`correct`、`total`，以及逐题 `details`（保存在 `agent_data/`）
+
+**纯文本开放问答 → 裁判打分**
+```bash
+python3 scripts/run_text_open_qa_and_judge.py
+```
+- 输入：`dataset/text_tasks/open_qa.json`
+- 第一步：生成每题 `ai_answer`
+- 第二步（可选）：裁判模型对比 `ai_answer` 与 `ground_truth`，输出 `{score: 0-10, reason: ...}`
+
+**多模态选择题（Accuracy）**
+```bash
+python3 scripts/run_multimodal_mcq.py
+```
+- 输入：`dataset/multimodal_tasks/image_qa.xlsx`
+- 关键字段：`question`、`options`、`image_url`、`answer`
+- `image_url` 支持：
+  - 公网可访问 URL（`https://...`），或
+  - 服务器本地图片路径
+- 模型兼容性：
+  - Qwen-VL：使用 `{"text": "..."} + {"image": "..."}` 结构
+  - OpenAI / OpenAI-compatible：使用标准的 `image_url` message 结构
+  - Claude：自动下载/读取图片并转为 base64 发送
+
+**多轮对话 → 裁判打分**
+```bash
+python3 scripts/run_dialogue_and_judge.py
+```
+- 输入：`dataset/text_tasks/dialogue.json`
+- 对话以 `dialogue_history` messages 形式送入模型，生成下一轮 assistant 回复
+- 裁判打分（可选）：将生成回复与 `ground_truth` 进行对比评分
+
+**临床预后两步法 → 裁判打分**
+```bash
+python3 scripts/run_prognosis_and_judge.py
+```
+- 输入：`dataset/prognosis/prognosis_eval.json`
+- 第一步：强推理模型根据 `clinical_info` 生成预后问题
+- 第二步：回答模型根据病例信息与问题进行作答
+- 裁判打分（可选）：对比 `ai_answer` 与 `ground_truth` 自动给分
+
+#### 5.3 输出保存在哪里？如何读取结果？
+- 所有脚本都会把详细输出写入 `agent_data/`（按任务自动创建 UUID 子文件夹）。
+- 选择题任务：逐题包含 `predicted`、`ground_truth`、`is_correct`、`raw_response`（便于错误分析与规则迭代）。
+- 裁判任务：逐题包含 `score`（0–10）与 `reason`；若裁判输出不是合法 JSON，会保留 `raw_response` 以便排查提示词与模型行为。
 
 ### 6. 提示词模板说明
 

@@ -13,7 +13,7 @@ from src.evaluators import (
     PrognosisEvaluator,
     DialogueEvaluator
 )
-from src.utils import save_agent_data, load_dataset
+from src.utils import save_agent_data, load_dataset, resolve_script_dir
 
 def evaluate_all():
     """
@@ -45,7 +45,7 @@ def evaluate_all():
     lang = "en" # Choose "en" or "zh"
     
     # Paths to datasets (assuming user placed them in the dataset folder)
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = resolve_script_dir(globals().get("__file__"))
     dataset_dir = os.path.join(base_dir, "dataset")
     
     # ---------------------------------------------------------

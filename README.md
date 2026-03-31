@@ -94,10 +94,17 @@ This codebase is highly modular. All evaluation logic is located in the `src/eva
 
 ### 5. Running the Evaluation
 
+This repository provides two ways to run evaluations:
+1) One-click full pipeline: `evaluate.py`
+2) Task-specific scripts: `scripts/*.py` (recommended for controlled experiments)
+
+All commands below assume you are in the repository root directory.
+
+#### 5.1 Full pipeline (all tasks)
 The main entry point is `evaluate.py`. You do not need to use complex command-line arguments. Simply run:
 
 ```bash
-python evaluate.py
+python3 evaluate.py
 ```
 
 **What happens when you run this script?**
@@ -108,6 +115,69 @@ python evaluate.py
 5. It runs the two-step Prognosis evaluation.
 6. Finally, it passes all open-ended outputs to the Judge model for scoring.
 7. All results, including detailed JSON outputs, are saved automatically in the `agent_data/` directory (categorized by task UUID).
+
+#### 5.2 Run a specific task (recommended)
+Each task script is fully self-contained and has a small set of editable parameters at the top of the file.
+
+**Common parameters (edit inside the script file)**
+- `GEN_PROVIDER`: generator model provider. Values: `qwen`, `openai`, `claude`, `general`.
+- `GEN_MODEL_NAME`: generator model name, e.g. `qwen-plus`, `qwen-vl-plus`, `gpt-4o`, `claude-3-5-sonnet-20240620`.
+- `LANG`: prompt language. Values: `en` or `zh`. This controls which prompt file is loaded from `prompt/`.
+- `DATASET_REL_PATH`: dataset path relative to repo root.
+- `RUN_JUDGE`: whether to run LLM-as-a-judge scoring for open-ended tasks.
+- `JUDGE_PROVIDER` / `JUDGE_MODEL_NAME`: judge model settings (same provider choices as `GEN_PROVIDER`).
+
+**Text Multiple Choice (Accuracy)**
+```bash
+python3 scripts/run_text_mcq.py
+```
+- Input file: `dataset/text_tasks/multiple_choice.json`
+- Output parsing: [mcq_utils.py](file:///d:/tencentcloud4G/zeng_thyroid/scientific_data/project_qa_generation/repository/src/utils/mcq_utils.py) extracts the final option letter from free-form model outputs.
+- Metrics: `accuracy`, `correct`, `total`, plus per-case `details` in `agent_data/`.
+
+**Text Open QA → Judge scoring**
+```bash
+python3 scripts/run_text_open_qa_and_judge.py
+```
+- Input file: `dataset/text_tasks/open_qa.json`
+- Stage 1: generates `ai_answer` for each question.
+- Stage 2 (optional): judge compares `ai_answer` vs `ground_truth` and outputs `{score: 0-10, reason: ...}`.
+
+**Multimodal Multiple Choice (Accuracy)**
+```bash
+python3 scripts/run_multimodal_mcq.py
+```
+- Input file: `dataset/multimodal_tasks/image_qa.xlsx`
+- Required columns: `question`, `options`, `image_url`, `answer`
+- `image_url` can be:
+  - a public URL (`https://...`) or
+  - a local image path on your server
+- Model compatibility:
+  - Qwen-VL style: uses `{"text": "..."} + {"image": "..."}` blocks
+  - OpenAI / OpenAI-compatible: uses standard `image_url` message blocks
+  - Claude: automatically downloads/reads the image and sends base64 content
+
+**Multi-turn Dialogue → Judge scoring**
+```bash
+python3 scripts/run_dialogue_and_judge.py
+```
+- Input file: `dataset/text_tasks/dialogue.json`
+- Dialogue is passed as `dialogue_history` messages; the model generates the next assistant turn.
+- Judge scoring (optional) compares the generated answer with `ground_truth`.
+
+**Prognosis (2-step) → Judge scoring**
+```bash
+python3 scripts/run_prognosis_and_judge.py
+```
+- Input file: `dataset/prognosis/prognosis_eval.json`
+- Step 1: a strong reasoning model generates prognosis questions from `clinical_info`.
+- Step 2: a (possibly different) model answers those questions.
+- Judge scoring (optional) scores `ai_answer` vs `ground_truth`.
+
+#### 5.3 Where are outputs saved? How to read them?
+- All scripts save detailed outputs under `agent_data/` (automatic UUID subfolders).
+- For MCQ tasks, each case includes `predicted`, `ground_truth`, `is_correct`, and `raw_response`.
+- For judge tasks, each case includes `score` (0–10) and `reason`. If the judge output is not valid JSON, the raw output is kept for debugging.
 
 ### 6. Prompts Explanation
 
