@@ -4,6 +4,7 @@ from .base_evaluator import BaseEvaluator
 from ..utils.prompt_utils import load_prompt
 from ..utils.data_utils import save_agent_data
 from ..utils.mcq_utils import extract_option_letters_from_options_text, parse_mcq_prediction
+from ..utils.image_utils import is_url, load_image_base64
 
 class MultimodalEvaluator(BaseEvaluator):
     """
@@ -26,15 +27,32 @@ class MultimodalEvaluator(BaseEvaluator):
             ground_truth = item.get("answer", "").strip().upper()
             
             prompt_text = prompt_template.format(question=question, options=options)
-            
-            # Format depends on the model's expected structure for images
-            # Here we provide a standard way (e.g., Qwen-VL or OpenAI format)
-            content = [
-                {"text": prompt_text},
-                {"image": image_url}
-            ]
-            
-            messages = [{"role": "user", "content": content}]
+
+            model_name = self.model.__class__.__name__
+            if model_name in {"OpenAIModel", "GeneralOpenAICompatibleModel"}:
+                if is_url(image_url):
+                    image_ref = image_url
+                else:
+                    b64, media_type = load_image_base64(image_url)
+                    image_ref = f"data:{media_type};base64,{b64}"
+                content = [
+                    {"type": "text", "text": prompt_text},
+                    {"type": "image_url", "image_url": {"url": image_ref}},
+                ]
+                messages = [{"role": "user", "content": content}]
+            elif model_name == "ClaudeModel":
+                b64, _ = load_image_base64(image_url)
+                content = [
+                    {"text": prompt_text},
+                    {"image": b64},
+                ]
+                messages = [{"role": "user", "content": content}]
+            else:
+                content = [
+                    {"text": prompt_text},
+                    {"image": image_url}
+                ]
+                messages = [{"role": "user", "content": content}]
             
             response = self.model.generate(messages, max_tokens=1024)
             
@@ -80,12 +98,31 @@ class MultimodalEvaluator(BaseEvaluator):
             image_url = item.get("image_url", "")
             
             prompt_text = prompt_template.format(question=question)
-            content = [
-                {"text": prompt_text},
-                {"image": image_url}
-            ]
-            
-            messages = [{"role": "user", "content": content}]
+            model_name = self.model.__class__.__name__
+            if model_name in {"OpenAIModel", "GeneralOpenAICompatibleModel"}:
+                if is_url(image_url):
+                    image_ref = image_url
+                else:
+                    b64, media_type = load_image_base64(image_url)
+                    image_ref = f"data:{media_type};base64,{b64}"
+                content = [
+                    {"type": "text", "text": prompt_text},
+                    {"type": "image_url", "image_url": {"url": image_ref}},
+                ]
+                messages = [{"role": "user", "content": content}]
+            elif model_name == "ClaudeModel":
+                b64, _ = load_image_base64(image_url)
+                content = [
+                    {"text": prompt_text},
+                    {"image": b64},
+                ]
+                messages = [{"role": "user", "content": content}]
+            else:
+                content = [
+                    {"text": prompt_text},
+                    {"image": image_url}
+                ]
+                messages = [{"role": "user", "content": content}]
             
             response = self.model.generate(messages, max_tokens=1024)
             
