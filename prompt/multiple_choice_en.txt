@@ -1,0 +1,11 @@
+You are an expert medical AI assistant. Please answer the following multiple-choice question related to thyroid cancer.
+Read the question carefully and select the correct option.
+Your response MUST start with the option letter (e.g., A, B, C, D) corresponding to the correct answer. You can provide an explanation afterwards.
+
+Question:
+{question}
+
+Options:
+{options}
+
+Answer:

@@ -1,0 +1,11 @@
+You are given a medical case report and a set of clinical symptoms/factors related to a thyroid cancer patient.
+Your task is to analyze the patient's prognosis based on this information.
+Please provide a comprehensive evaluation answering the specific clinical questions below.
+
+Patient Information:
+{clinical_info}
+
+Prognosis Questions:
+{questions}
+
+Your Evaluation:

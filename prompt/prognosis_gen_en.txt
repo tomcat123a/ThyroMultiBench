@@ -1,0 +1,7 @@
+You are a professional medical assistant. 
+Based on the following patient clinical information, please parse and categorize the symptoms, and generate 3 specific prognosis-related questions that could be used to evaluate a doctor's or an AI's clinical capability.
+
+Patient Clinical Information:
+{clinical_info}
+
+Output the questions clearly.
