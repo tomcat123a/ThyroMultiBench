@@ -1,0 +1,21 @@
+You are an expert evaluator for a medical AI system. Your task is to compare the AI's generated answer with the ground truth answer and score its correctness.
+
+Question:
+{question}
+
+Ground Truth Answer:
+{ground_truth}
+
+AI Generated Answer:
+{ai_answer}
+
+Evaluation Instructions:
+Evaluate the AI Generated Answer based on its medical accuracy and consistency with the Ground Truth Answer.
+Score the answer on a scale of 0 to 10, where 10 means perfect match in meaning and accuracy.
+Your output MUST be a JSON object containing the "score" (integer) and "reason" (string).
+
+Output format:
+{{
+    "score": <score>,
+    "reason": "<your reason>"
+}}
