@@ -3,7 +3,8 @@
 [English](README.md) | [中文版](README_zh.md)
 
 ---
-![Uploading 下载.png…]()
+<img width="1408" height="768" alt="下载" src="https://github.com/user-attachments/assets/dfa4c8c4-b100-411d-918c-abbdf2183b51" />
+
 
 
 ## 📖 English Version: Comprehensive Tutorial
